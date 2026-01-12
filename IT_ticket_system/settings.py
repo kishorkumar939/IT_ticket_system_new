@@ -71,23 +71,20 @@ WSGI_APPLICATION = 'IT_ticket_system.wsgi.application'
 
 # 4. DATABASE
 # This logic checks if POSTGRES_URL exists (Vercel) or uses SQLite (Local)
+
+DATABASES = {
+    'default': dj_database_url.config(
+        # Fallback to local SQLite ONLY if POSTGRES_URL isn't found
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
+
+# Add this to ensure Django doesn't try to load sqlite logic on Vercel
 if os.environ.get('POSTGRES_URL'):
-    # USE POSTGRES ON VERCEL
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('POSTGRES_URL'),
-            conn_max_age=600,
-            ssl_require=True
-        )
-    }
-else:
-    # USE SQLITE ONLY LOCALLY
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+    # Remove any reference to sqlite in production
+    DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
 
 # 5. AUTHENTICATION CONFIGURATION
 AUTHENTICATION_BACKENDS = [

@@ -1,12 +1,10 @@
 # build_files.sh
-echo "--- Starting Build Process ---"
+echo "--- Starting Build ---"
 
-# Use the python3 module path to install requirements
+# 1. Force install pip and essential requirements
 python3 -m pip install --upgrade pip
+python3 -m pip install requests  # Explicitly force-install to fix your current error
 python3 -m pip install -r requirements.txt
-
-# Manually install requests to be absolutely sure
-python3 -m pip install requests
 
 echo "--- Running Migrations ---"
 python3 manage.py makemigrations --noinput
@@ -28,4 +26,4 @@ echo "--- Collecting Static Files ---"
 mkdir -p staticfiles_build/static
 python3 manage.py collectstatic --noinput --clear
 
-echo "--- Build Finished Successfully ---"
+echo "--- Build Finished ---"
