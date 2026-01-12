@@ -70,15 +70,34 @@ TEMPLATES = [
 WSGI_APPLICATION = 'IT_ticket_system.wsgi.application'
 
 # 4. DATABASE
-# Use dj_database_url to parse POSTGRES_URL from Vercel environment
-DATABASES = {
-    'default': dj_database_url.config(
-        # Fallback to local SQLite ONLY if POSTGRES_URL is missing
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
+    # 1. Check if we are in the Vercel Build environment
+IS_VERCEL = "VERCEL" in os.environ
+
+if os.environ.get('POSTGRES_URL'):
+    # 2. Use the live Neon/Postgres database
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('POSTGRES_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+elif IS_VERCEL:
+    # 3. CRITICAL: Use a 'Dummy' database during Vercel Build 
+    # This prevents the '_sqlite3' error because it never looks for sqlite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.dummy',
+        }
+    }
+else:
+    # 4. Local Development only
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Add this explicit check to bypass SQLite logic on Vercel
 if os.environ.get('POSTGRES_URL'):
