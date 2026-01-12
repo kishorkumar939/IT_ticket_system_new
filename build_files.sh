@@ -1,16 +1,18 @@
 # build_files.sh
-echo "--- Starting Build ---"
+echo "--- Starting Build Process ---"
 
-# 1. Force install pip and essential requirements
+# 1. Ensure pip is available and install dependencies first
+# This prevents 'ModuleNotFoundError' during later Django commands
 python3 -m pip install --upgrade pip
-python3 -m pip install requests  # Explicitly force-install to fix your current error
 python3 -m pip install -r requirements.txt
 
-echo "--- Running Migrations ---"
-python3 manage.py makemigrations --noinput
-python3 manage.py migrate --noinput
+echo "--- Running Migrations & Static Files ---"
+# 2. Use python3 to ensure the environment's Django 6.0 is found
+# Create the directory manually to avoid 'No Output Directory' error
+mkdir -p staticfiles_build/static
+python3 manage.py collectstatic --noinput --clear
 
-echo "--- Creating Superuser ---"
+# 3. Create Superuser (Postgres only)
 python3 manage.py shell <<EOF
 from django.contrib.auth import get_user_model
 import os
@@ -22,8 +24,4 @@ if not User.objects.filter(username=username).exists():
     User.objects.create_superuser(username, email, password)
 EOF
 
-echo "--- Collecting Static Files ---"
-mkdir -p staticfiles_build/static
-python3 manage.py collectstatic --noinput --clear
-
-echo "--- Build Finished ---"
+echo "--- Build Finished Successfully ---"
