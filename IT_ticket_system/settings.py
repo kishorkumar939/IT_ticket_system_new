@@ -2,13 +2,17 @@ import os
 from pathlib import Path
 
 # 1. BASE DIRECTORY
-# This must stay at the top so other settings can use it
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 2. SECURITY SETTINGS
-SECRET_KEY = 'django-insecure-6elc4hgz$*kdgma7(@$9r$d3(b(^(n#*13re1$6o@p8f08!h_x'
-DEBUG = True
-ALLOWED_HOSTS = []
+# Note: In production, use environment variables for the SECRET_KEY
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-6elc4hgz$*kdgma7(@$9r$d3(b(^(n#*13re1$6o@p8f08!h_x')
+
+# Set DEBUG to False in production
+DEBUG = True 
+
+# Allow Vercel domains and local hosts
+ALLOWED_HOSTS = ['.vercel.app', 'now.sh', 'localhost', '127.0.0.1']
 
 # 3. APPLICATION DEFINITION
 INSTALLED_APPS = [
@@ -30,18 +34,18 @@ INSTALLED_APPS = [
     'tickets',
 ]
 
-# Required for django-allauth
 SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # ADD THIS for static files on Vercel
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware', # Required for allauth
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'IT_ticket_system.urls'
@@ -49,7 +53,6 @@ ROOT_URLCONF = 'IT_ticket_system.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # This tells Django to find your base.html in the main folder
         'DIRS': [os.path.join(BASE_DIR, 'templates')], 
         'APP_DIRS': True,
         'OPTIONS': {
@@ -66,6 +69,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'IT_ticket_system.wsgi.application'
 
 # 4. DATABASE
+# WARNING: SQLite will reset on Vercel. Consider using Vercel Postgres for production.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -79,11 +83,9 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# Traffic Controller: Where users go after login/logout
 LOGIN_REDIRECT_URL = 'login_redirect'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# Google OAuth Configuration
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
@@ -105,16 +107,17 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# 8. STATIC FILES (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+# 8. STATIC FILES (Optimized for Vercel)
+STATIC_URL = '/static/'
 
-# This tells Django where your 'static' folder is located
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
+# Local static files
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-# Folder where static files are collected for production
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Production static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
+
+# WhiteNoise storage to handle compression/caching
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # 9. DEFAULT PRIMARY KEY FIELD
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
