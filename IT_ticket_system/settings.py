@@ -70,17 +70,25 @@ TEMPLATES = [
 WSGI_APPLICATION = 'IT_ticket_system.wsgi.application'
 
 # 4. DATABASE
-# Use a Dummy engine during build to avoid the _sqlite3 error
+# 1. Check if running on Vercel
+IS_VERCEL = "VERCEL" in os.environ
+
 if os.environ.get('POSTGRES_URL'):
+    # PRODUCTION: Use Neon Postgres
     DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
+        'default': dj_database_url.config(
+            default=os.environ.get('POSTGRES_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
     DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
-elif "VERCEL" in os.environ:
+elif IS_VERCEL:
+    # BUILD PHASE: Use Dummy to avoid _sqlite3 errors
     DATABASES = {'default': {'ENGINE': 'django.db.backends.dummy'}}
 else:
+    # LOCAL: Use SQLite
     DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'db.sqlite3'}}
-
 # 5. AUTHENTICATION CONFIGURATION
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
