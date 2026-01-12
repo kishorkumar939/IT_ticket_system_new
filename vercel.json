@@ -4,7 +4,7 @@
     {
       "src": "IT_ticket_system/wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
+      "config": { "runtime": "python3.12" }
     },
     {
       "src": "build_files.sh",
@@ -13,13 +13,7 @@
     }
   ],
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "IT_ticket_system/wsgi.py"
-    }
+    { "src": "/static/(.*)", "dest": "/static/$1" },
+    { "src": "/(.*)", "dest": "IT_ticket_system/wsgi.py" }
   ]
 }
