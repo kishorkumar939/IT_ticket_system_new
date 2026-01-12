@@ -1,15 +1,16 @@
 import os
+import dj_database_url
 from pathlib import Path
 
 # 1. BASE DIRECTORY
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 2. SECURITY SETTINGS
-# Note: In production, use environment variables for the SECRET_KEY
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-6elc4hgz$*kdgma7(@$9r$d3(b(^(n#*13re1$6o@p8f08!h_x')
+# Use environment variable for the SECRET_KEY in production
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-default-key-change-this')
 
-# Set DEBUG to False in production
-DEBUG = True 
+# Set DEBUG to False in production by checking an environment variable
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 # Allow Vercel domains and local hosts
 ALLOWED_HOSTS = ['.vercel.app', 'now.sh', 'localhost', '127.0.0.1']
@@ -38,7 +39,7 @@ SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # ADD THIS for static files on Vercel
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # REQUIRED for Vercel static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -69,12 +70,13 @@ TEMPLATES = [
 WSGI_APPLICATION = 'IT_ticket_system.wsgi.application'
 
 # 4. DATABASE
-# WARNING: SQLite will reset on Vercel. Consider using Vercel Postgres for production.
+# This logic checks if POSTGRES_URL exists (Vercel) or uses SQLite (Local)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 # 5. AUTHENTICATION CONFIGURATION
@@ -109,15 +111,20 @@ USE_TZ = True
 
 # 8. STATIC FILES (Optimized for Vercel)
 STATIC_URL = '/static/'
-
-# Local static files
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-# Production static files
+# Vercel-specific static path
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
-# WhiteNoise storage to handle compression/caching
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Enable WhiteNoise storage for compression and permanent caching
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # 9. DEFAULT PRIMARY KEY FIELD
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
