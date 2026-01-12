@@ -70,39 +70,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'IT_ticket_system.wsgi.application'
 
 # 4. DATABASE
-    # 1. Check if we are in the Vercel Build environment
-IS_VERCEL = "VERCEL" in os.environ
-
+# Use a Dummy engine during build to avoid the _sqlite3 error
 if os.environ.get('POSTGRES_URL'):
-    # 2. Use the live Neon/Postgres database
     DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('POSTGRES_URL'),
-            conn_max_age=600,
-            ssl_require=True
-        )
+        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
     }
-elif IS_VERCEL:
-    # 3. CRITICAL: Use a 'Dummy' database during Vercel Build 
-    # This prevents the '_sqlite3' error because it never looks for sqlite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.dummy',
-        }
-    }
-else:
-    # 4. Local Development only
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
-# Add this explicit check to bypass SQLite logic on Vercel
-if os.environ.get('POSTGRES_URL'):
-    # Change the engine directly to Postgres for production
     DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
+elif "VERCEL" in os.environ:
+    DATABASES = {'default': {'ENGINE': 'django.db.backends.dummy'}}
+else:
+    DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'db.sqlite3'}}
 
 # 5. AUTHENTICATION CONFIGURATION
 AUTHENTICATION_BACKENDS = [
